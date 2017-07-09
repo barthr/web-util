@@ -7,11 +7,6 @@ import (
 	"net/http"
 )
 
-type Header struct {
-	Key   string
-	Value string
-}
-
 type errorResponse struct {
 	Error string `json:"error"`
 }
