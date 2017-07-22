@@ -11,10 +11,35 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
-type Action func(r *http.Request) *Response
+// HandlerFunc is a wrapper for the handler interface
+type HandlerFunc func(r *http.Request) *Response
 
+// Implement the http.Handle interface
+// We handle the writing of the headers and the body inside the action method
+// Which will be called by the router
+func (hf HandlerFunc) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	if response := hf(r); response != nil {
+		if response.ContentType != "" {
+			rw.Header().Set("Content-Type", response.ContentType)
+		}
+		for k, v := range response.Headers {
+			rw.Header().Set(k, v)
+		}
+		rw.WriteHeader(response.Status)
+		_, err := io.Copy(rw, response.Content)
+
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+		}
+	} else {
+		rw.WriteHeader(http.StatusOK)
+	}
+}
+
+// Headers are the headers used for sending to the callee
 type Headers map[string]string
 
+// Response is the actual response used to write to the response writer
 type Response struct {
 	Status      int
 	ContentType string
@@ -22,6 +47,7 @@ type Response struct {
 	Headers     Headers
 }
 
+// Error returns create's an Response object with the content set to the error
 func Error(status int, err error, headers Headers) *Response {
 	return &Response{
 		Status:  status,
@@ -30,6 +56,8 @@ func Error(status int, err error, headers Headers) *Response {
 	}
 }
 
+// ErrorJSON create's an Response object with the content set to the error
+// and encoded in JSON
 func ErrorJSON(status int, err error, headers Headers) *Response {
 	errResp := errorResponse{
 		Error: err.Error(),
@@ -48,6 +76,7 @@ func ErrorJSON(status int, err error, headers Headers) *Response {
 	}
 }
 
+// Data create's an Response object with the content set to the passed byte array content
 func Data(status int, content []byte, headers Headers) *Response {
 	return &Response{
 		Status:  status,
@@ -56,7 +85,8 @@ func Data(status int, content []byte, headers Headers) *Response {
 	}
 }
 
-func DataJSON(status int, v interface{}, headers Headers) *Response {
+// JSON create's an Response object with the content set to the encoded json value of v
+func JSON(status int, v interface{}, headers Headers) *Response {
 	b, err := json.Marshal(v)
 
 	if err != nil {
@@ -71,29 +101,11 @@ func DataJSON(status int, v interface{}, headers Headers) *Response {
 	}
 }
 
-func DataWithReader(status int, r io.Reader, headers Headers) *Response {
+// WithReader create's an Response object with the content set to the given reader
+func WithReader(status int, r io.Reader, headers Headers) *Response {
 	return &Response{
 		Status:  status,
 		Content: r,
 		Headers: headers,
-	}
-}
-
-func (a Action) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	if response := a(r); response != nil {
-		if response.ContentType != "" {
-			rw.Header().Set("Content-Type", response.ContentType)
-		}
-		for k, v := range response.Headers {
-			rw.Header().Set(k, v)
-		}
-		rw.WriteHeader(response.Status)
-		_, err := io.Copy(rw, response.Content)
-
-		if err != nil {
-			rw.WriteHeader(http.StatusInternalServerError)
-		}
-	} else {
-		rw.WriteHeader(http.StatusOK)
 	}
 }
