@@ -24,3 +24,7 @@ func (mwc MiddlewareChain) Wrap(final http.Handler) http.Handler {
 	}
 	return final
 }
+
+func (mwc MiddlewareChain) WrapHandlerFunc(final HandlerFunc) http.Handler {
+	return mwc.Wrap(final)
+}
