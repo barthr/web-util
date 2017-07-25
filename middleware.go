@@ -28,3 +28,10 @@ func (mwc MiddlewareChain) Wrap(final http.Handler) http.Handler {
 func (mwc MiddlewareChain) WrapHandlerFunc(final HandlerFunc) http.Handler {
 	return mwc.Wrap(final)
 }
+
+func (mwc MiddlewareChain) Add(middlewareFuncs ...MiddlewareFunc) MiddlewareChain {
+	newChain := mwc
+	copy(newChain.chain, mwc.chain)
+	newChain.chain = append(newChain.chain, middlewareFuncs...)
+	return newChain
+}
