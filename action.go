@@ -48,17 +48,20 @@ type Response struct {
 }
 
 // Error returns create's an Response object with the content set to the error
-func Error(status int, err error, headers Headers) *Response {
-	return &Response{
+func Error(status int, err error, headers ...Headers) *Response {
+	r := &Response{
 		Status:  status,
 		Content: bytes.NewBufferString(err.Error()),
-		Headers: headers,
 	}
+	if len(headers) > 0 {
+		r.Headers = headers[0]
+	}
+	return r
 }
 
 // ErrorJSON create's an Response object with the content set to the error
 // and encoded in JSON
-func ErrorJSON(status int, err error, headers Headers) *Response {
+func ErrorJSON(status int, err error, headers ...Headers) *Response {
 	errResp := errorResponse{
 		Error: err.Error(),
 	}
@@ -66,46 +69,58 @@ func ErrorJSON(status int, err error, headers Headers) *Response {
 	b, err := json.Marshal(errResp)
 
 	if err != nil {
-		return Error(http.StatusInternalServerError, err, headers)
+		return Error(http.StatusInternalServerError, err, headers...)
 	}
-	return &Response{
+	r := &Response{
 		Status:      status,
 		ContentType: "application/json",
 		Content:     bytes.NewBuffer(b),
-		Headers:     headers,
 	}
+	if len(headers) > 0 {
+		r.Headers = headers[0]
+	}
+	return r
 }
 
 // Data create's an Response object with the content set to the passed byte array content
-func Data(status int, content []byte, headers Headers) *Response {
-	return &Response{
+func Data(status int, content []byte, headers ...Headers) *Response {
+	r := &Response{
 		Status:  status,
 		Content: bytes.NewBuffer(content),
-		Headers: headers,
 	}
+	if len(headers) > 0 {
+		r.Headers = headers[0]
+	}
+	return r
 }
 
 // JSON create's an Response object with the content set to the encoded json value of v
-func JSON(status int, v interface{}, headers Headers) *Response {
+func JSON(status int, v interface{}, headers ...Headers) *Response {
 	b, err := json.Marshal(v)
 
 	if err != nil {
-		return ErrorJSON(http.StatusInternalServerError, err, headers)
+		return ErrorJSON(http.StatusInternalServerError, err, headers...)
 	}
 
-	return &Response{
+	r := &Response{
 		Status:      status,
 		ContentType: "application/json",
 		Content:     bytes.NewBuffer(b),
-		Headers:     headers,
 	}
+	if len(headers) > 0 {
+		r.Headers = headers[0]
+	}
+	return r
 }
 
 // WithReader create's an Response object with the content set to the given reader
-func WithReader(status int, r io.Reader, headers Headers) *Response {
-	return &Response{
+func WithReader(status int, reader io.Reader, headers ...Headers) *Response {
+	r := &Response{
 		Status:  status,
-		Content: r,
-		Headers: headers,
+		Content: reader,
 	}
+	if len(headers) > 0 {
+		r.Headers = headers[0]
+	}
+	return r
 }
