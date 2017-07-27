@@ -38,7 +38,6 @@ func (mwc MiddlewareChain) WrapHandlerFunc(final HandlerFunc) http.Handler {
 // Add create's a copy of the current chain and add's the given middlewareFuncs to the chain
 func (mwc MiddlewareChain) Add(middlewareFuncs ...MiddlewareFunc) MiddlewareChain {
 	newChain := mwc
-	copy(newChain.chain, mwc.chain)
-	newChain.chain = append(newChain.chain, middlewareFuncs...)
+	copy(append(newChain.chain, middlewareFuncs...), mwc.chain)
 	return newChain
 }
