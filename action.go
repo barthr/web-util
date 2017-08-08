@@ -5,10 +5,15 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"reflect"
 )
 
 type errorResponse struct {
 	Error string `json:"error"`
+}
+
+type msgResponse struct {
+	Msg interface{} `json:"msg"`
 }
 
 // HandlerFunc is a wrapper for the handler interface
@@ -96,6 +101,11 @@ func Data(status int, content []byte, headers ...Headers) *Response {
 
 // JSON create's an Response object with the content set to the encoded json value of v
 func JSON(status int, v interface{}, headers ...Headers) *Response {
+	if reflect.ValueOf(v).Kind() != reflect.Struct {
+		v = msgResponse{
+			Msg: v,
+		}
+	}
 	b, err := json.Marshal(v)
 
 	if err != nil {
